@@ -9,7 +9,9 @@ import (
 
 var cfg struct {
 	Output flags.Filename `short:"o" long:"out" description:"output file path" default:"-"`
-	Dirs   []string       `short:"d" long:"dir" description:"directories to parse"`
+	Append bool           `short:"a" long:"append" description:"append to output file"`
+
+	Dirs []string `short:"d" long:"dir" description:"directories to parse"`
 
 	Package string   `short:"p" long:"pkg" description:"package that the files belong to"`
 	Args struct {
@@ -33,8 +35,14 @@ func main() {
 
 	file := os.Stdout
 	if cfg.Output != "-" {
-		if f, err := os.Create(string(cfg.Output)); err != nil {
-			fmt.Printf("Failed to create/open file %v. Cause: %v\n", cfg.Output, err)
+		flag := os.O_CREATE|os.O_WRONLY
+		if cfg.Append {
+			flag |= os.O_APPEND
+		} else {
+			flag |= os.O_TRUNC
+		}
+		if f, err := os.OpenFile(string(cfg.Output), flag, 0666); err != nil {
+			fmt.Printf("Failed to open file %v. Cause: %v\n", cfg.Output, err)
 			os.Exit(1)
 		} else {
 			file = f
